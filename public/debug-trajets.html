@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Trajets API</title>
+    <style>
+        body { font-family: Arial; margin: 20px; background: #f5f5f5; }
+        .box { background: white; padding: 20px; margin: 10px 0; border-radius: 8px; }
+        input, select { padding: 8px; margin: 5px 0; width: 100%; max-width: 300px; display: block; }
+        button { padding: 10px 20px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; margin: 5px 0; }
+        button:hover { background: #0056b3; }
+        #log { background: #000; color: #0f0; padding: 15px; border-radius: 4px; font-family: monospace; white-space: pre-wrap; word-break: break-all; max-height: 600px; overflow-y: auto; font-size: 11px; }
+        .form-group { margin: 10px 0; }
+        label { display: block; font-weight: bold; margin-bottom: 5px; }
+        .success { color: #2ecc71; }
+        .error { color: #e74c3c; }
+    </style>
+</head>
+<body>
+    <h1>🔧 Debug Trajets & Buses API</h1>
+    
+    <div class="box">
+        <h2>📡 Tests API</h2>
+        <button onclick="testBusList()">1️⃣ GET /api/admin/bus</button>
+        <button onclick="testTrajetsList()">2️⃣ GET /api/admin/trajets</button>
+    </div>
+
+    <div class="box">
+        <h2>✏️ Créer un nouveau Trajet</h2>
+        <div class="form-group">
+            <label>Ville de départ:</label>
+            <input type="text" id="villeDepart" placeholder="ex: Marseille">
+        </div>
+        <div class="form-group">
+            <label>Ville d'arrivée:</label>
+            <input type="text" id="villeArrivee" placeholder="ex: Toulouse">
+        </div>
+        <div class="form-group">
+            <label>Durée (minutes):</label>
+            <input type="number" id="duree" value="240">
+        </div>
+        <div class="form-group">
+            <label>Distance (km):</label>
+            <input type="number" id="distance" value="465" step="0.1">
+        </div>
+        <div class="form-group">
+            <label>Prix Standard:</label>
+            <input type="number" id="prixStandard" value="5000">
+        </div>
+        <div class="form-group">
+            <label>Prix VIP:</label>
+            <input type="number" id="prixVIP" value="10000">
+        </div>
+        <button onclick="createTrajet()">3️⃣ Créer Trajet</button>
+    </div>
+
+    <div class="box">
+        <h2>Logs:</h2>
+        <div id="log">Prêt...</div>
+    </div>
+
+    <script>
+        function log(msg, type = 'info') {
+            const el = document.getElementById('log');
+            const timestamp = new Date().toLocaleTimeString();
+            const prefix = type === 'success' ? '✓' : type === 'error' ? '✗' : '•';
+            el.textContent += `\n[${timestamp}] ${prefix} ${msg}`;
+            el.scrollTop = el.scrollHeight;
+        }
+
+        async function getToken() {
+            const token = localStorage.getItem('auth_token') || sessionStorage.getItem('auth_token');
+            if (!token) {
+                log('❌ Pas de token - connectez-vous d\'abord', 'error');
+                return null;
+            }
+            return token;
+        }
+
+        async function testBusList() {
+            log('\n📡 GET /api/admin/bus');
+            const token = await getToken();
+            if (!token) return;
+
+            try {
+                const res = await fetch('/api/admin/bus', {
+                    headers: {
+                        'Authorization': 'Bearer ' + token,
+                        'Accept': 'application/json'
+                    }
+                });
+
+                log(`Status: ${res.status}`, res.ok ? 'info' : 'error');
+
+                const data = await res.json();
+                if (data.success && data.data && data.data.length > 0) {
+                    log(`✓ ${data.data.length} bus trouvés`, 'success');
+                    data.data.forEach(bus => {
+                        log(`  - ${bus.immatriculation} (${bus.marque} ${bus.modele}) - ${bus.capaciteTotale} places`, 'success');
+                    });
+                } else {
+                    log('Aucun bus trouvé', 'error');
+                }
+            } catch (e) {
+                log(`❌ Exception: ${e.message}`, 'error');
+            }
+        }
+
+        async function testTrajetsList() {
+            log('\n📡 GET /api/admin/trajets');
+            const token = await getToken();
+            if (!token) return;
+
+            try {
+                const res = await fetch('/api/admin/trajets', {
+                    headers: {
+                        'Authorization': 'Bearer ' + token,
+                        'Accept': 'application/json'
+                    }
+                });
+
+                log(`Status: ${res.status}`, res.ok ? 'info' : 'error');
+                const data = await res.json();
+                
+                if (data.success && data.data && data.data.data && data.data.data.length > 0) {
+                    log(`✓ ${data.data.data.length} trajets trouvés`, 'success');
+                    data.data.data.forEach(t => {
+                        log(`  - ${t.villeDepart} → ${t.villeArrivee} (${t.distance}km, ${t.dureeEstimee})`, 'success');
+                    });
+                } else {
+                    log('Aucun trajet trouvé', 'error');
+                }
+            } catch (e) {
+                log(`❌ Exception: ${e.message}`, 'error');
+            }
+        }
+
+        async function createTrajet() {
+            log('\n📡 POST /api/admin/trajets');
+            const token = await getToken();
+            if (!token) return;
+
+            const villeDepart = document.getElementById('villeDepart').value.trim();
+            const villeArrivee = document.getElementById('villeArrivee').value.trim();
+            const duree = parseInt(document.getElementById('duree').value);
+            const distance = parseFloat(document.getElementById('distance').value);
+            const prixStandard = parseFloat(document.getElementById('prixStandard').value);
+            const prixVIP = parseFloat(document.getElementById('prixVIP').value);
+
+            if (!villeDepart || !villeArrivee) {
+                log('❌ Les villes sont obligatoires', 'error');
+                return;
+            }
+
+            const payload = { villeDepart, villeArrivee, duree, distance, prixStandard, prixVIP };
+            log(`Trajet: ${villeDepart} → ${villeArrivee}`);
+
+            try {
+                const res = await fetch('/api/admin/trajets', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': 'Bearer ' + token,
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify(payload)
+                });
+
+                log(`Status: ${res.status}`, res.ok ? 'info' : 'error');
+                const text = await res.text();
+
+                try {
+                    const data = JSON.parse(text);
+                    if (data.success) {
+                        log(`✓ Trajet créé! (ID: ${data.data.idTrajet})`, 'success');
+                        document.getElementById('villeDepart').value = '';
+                        document.getElementById('villeArrivee').value = '';
+                    } else {
+                        log(`✗ Erreur: ${data.message}`, 'error');
+                    }
+                } catch (e) {
+                    log(`✗ Erreur: ${text}`, 'error');
+                }
+            } catch (e) {
+                log(`❌ Exception: ${e.message}`, 'error');
+            }
+        }
+
+        window.onload = () => log('Page chargée. Connectez-vous d\'abord dans l\'admin.');
+    </script>
+</body>
+</html>

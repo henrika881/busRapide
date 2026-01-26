@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test API BusRapide</title>
+    <style>
+        body { font-family: Arial; margin: 20px; background: #f5f5f5; }
+        .box { background: white; padding: 20px; margin: 10px 0; border-radius: 8px; }
+        .success { color: green; font-weight: bold; }
+        .error { color: red; font-weight: bold; }
+        input, select { padding: 8px; margin: 5px 0; width: 100%; max-width: 500px; }
+        button { padding: 10px 20px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; }
+        button:hover { background: #0056b3; }
+        #log { background: #f0f0f0; padding: 10px; margin: 10px 0; border-radius: 4px; font-family: monospace; white-space: pre-wrap; word-break: break-all; }
+    </style>
+</head>
+<body>
+    <h1>Test API BusRapide</h1>
+    
+    <div class="box">
+        <h2>1. Connexion</h2>
+        <input type="email" id="email" value="gestionnaire@example.com" placeholder="Email">
+        <input type="password" id="password" value="password" placeholder="Mot de passe">
+        <button onclick="login()">Se connecter</button>
+        <div id="loginStatus"></div>
+    </div>
+
+    <div class="box">
+        <h2>2. Créer un Bus</h2>
+        <input type="text" id="immatriculation" placeholder="Immatriculation" value="TEST-001">
+        <input type="text" id="marque" placeholder="Marque" value="Mercedes">
+        <input type="text" id="modele" placeholder="Modèle" value="Sprinter">
+        <input type="number" id="capacite" placeholder="Capacité" value="50">
+        <input type="number" id="vip" placeholder="Sièges VIP" value="5">
+        <input type="date" id="dateService" value="2025-12-27">
+        <button onclick="createBus()">Créer Bus</button>
+    </div>
+
+    <div class="box">
+        <h2>Logs</h2>
+        <div id="log">Prêt...</div>
+    </div>
+
+    <script>
+        let token = '';
+
+        function log(msg) {
+            const logEl = document.getElementById('log');
+            logEl.textContent += '\n[' + new Date().toLocaleTimeString() + '] ' + msg;
+            logEl.scrollTop = logEl.scrollHeight;
+        }
+
+        async function login() {
+            log('📡 Tentative de connexion...');
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            
+            try {
+                const res = await fetch('/admin/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, password })
+                });
+
+                const data = await res.json();
+                log('Status: ' + res.status);
+                log('Réponse: ' + JSON.stringify(data));
+
+                if (res.ok && data.token) {
+                    token = data.token;
+                    document.getElementById('loginStatus').innerHTML = '<span class="success">✓ Connecté - Token: ' + token.substring(0, 30) + '...</span>';
+                    log('✓ Token reçu');
+                } else {
+                    log('✗ Erreur de connexion');
+                }
+            } catch (e) {
+                log('✗ Exception: ' + e.message);
+            }
+        }
+
+        async function createBus() {
+            if (!token) {
+                log('✗ Pas de token - connectez-vous d\'abord');
+                return;
+            }
+
+            log('🚌 Création d\'un bus...');
+            const busData = {
+                immatriculation: document.getElementById('immatriculation').value,
+                marque: document.getElementById('marque').value,
+                modele: document.getElementById('modele').value,
+                capaciteTotale: parseInt(document.getElementById('capacite').value),
+                nbSiegesVIP: parseInt(document.getElementById('vip').value),
+                statut: 'en_service',
+                dateMiseEnService: document.getElementById('dateService').value
+            };
+
+            log('Payload: ' + JSON.stringify(busData));
+
+            try {
+                const res = await fetch('/api/admin/bus', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': 'Bearer ' + token,
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify(busData)
+                });
+
+                log('Status: ' + res.status + ' (' + (res.ok ? 'OK' : 'ERROR') + ')');
+                
+                const text = await res.text();
+                log('Raw Response: ' + text);
+
+                try {
+                    const data = JSON.parse(text);
+                    if (data.success) {
+                        log('✓ Bus créé avec succès!');
+                        log('ID: ' + (data.data?.idBus || data.data?.id));
+                    } else {
+                        log('✗ Erreur métier: ' + (data.message || 'Inconnue'));
+                        log('Errors: ' + JSON.stringify(data.errors));
+                    }
+                } catch (e) {
+                    log('✗ Impossible de parser JSON: ' + e.message);
+                }
+            } catch (e) {
+                log('✗ Exception: ' + e.message);
+            }
+        }
+
+        // Auto-login au chargement
+        window.onload = () => log('Page chargée - prêt à tester');
+    </script>
+</body>
+</html>

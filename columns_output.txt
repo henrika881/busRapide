@@ -1,0 +1,82 @@
+﻿Table: tickets
+ - idTicket
+ - numeroBillet
+ - idVoyage
+ - id_client
+ - ref_transaction
+ - idSiege
+ - prixPaye
+ - codeQR
+ - dateEmission
+ - datePaiement
+ - statut
+ - modePaiement
+ - created_at
+ - updated_at
+ - deleted_at
+
+Table: paiement
+ - ref_transaction
+ - id_client
+ - montant
+ - date_paiement
+ - mode_paiement
+ - statut
+ - banque
+ - numero_autorisation
+ - created_at
+ - updated_at
+
+Table: voyages
+ - idVoyage
+ - idBus
+ - idTrajet
+ - dateHeureDepart
+ - dateHeureArrivee
+ - prixStandard
+ - prixVIP
+ - siegesStandardDisponibles
+ - siegesVIPDisponibles
+ - placesDisponiblesTotal
+ - prixActuel
+ - placesDisponibles
+ - statut
+ - created_at
+ - updated_at
+ - deleted_at
+
+Table: clients
+ - id_client
+ - nom
+ - prenom
+ - email
+ - motDePasse
+ - telephone
+ - numeroCNI
+ - dateInscription
+ - statut
+ - created_at
+ - updated_at
+
+Table: sieges
+ - idSiege
+ - idBus
+ - numeroSiege
+ - type
+ - classe
+ - statut
+ - created_at
+ - updated_at
+
+Table: bus
+ - idBus
+ - immatriculation
+ - marque
+ - modele
+ - capaciteTotale
+ - statut
+ - dateMiseEnService
+ - created_at
+ - updated_at
+ - deleted_at
+

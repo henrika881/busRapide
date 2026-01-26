@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Voyages API</title>
+    <style>
+        body { font-family: Arial; margin: 20px; background: #f5f5f5; }
+        .box { background: white; padding: 20px; margin: 10px 0; border-radius: 8px; }
+        input, select { padding: 8px; margin: 5px 0; width: 100%; max-width: 300px; display: block; }
+        button { padding: 10px 20px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; margin: 5px 0; }
+        button:hover { background: #0056b3; }
+        #log { background: #000; color: #0f0; padding: 15px; border-radius: 4px; font-family: monospace; white-space: pre-wrap; word-break: break-all; max-height: 600px; overflow-y: auto; font-size: 11px; }
+        .form-group { margin: 10px 0; }
+        label { display: block; font-weight: bold; margin-bottom: 5px; }
+    </style>
+</head>
+<body>
+    <h1>🔧 Debug Voyages API</h1>
+    
+    <div class="box">
+        <h2>📡 Tests API</h2>
+        <button onclick="testVoyagesList()">1️⃣ GET /api/admin/voyages</button>
+    </div>
+
+    <div class="box">
+        <h2>✏️ Créer un nouveau Voyage</h2>
+        <div class="form-group">
+            <label>Bus:</label>
+            <select id="idBus">
+                <option value="">-- Charger les buses --</option>
+            </select>
+            <button onclick="loadBuses()">Charger les buses</button>
+        </div>
+        <div class="form-group">
+            <label>Trajet:</label>
+            <select id="idTrajet">
+                <option value="">-- Charger les trajets --</option>
+            </select>
+            <button onclick="loadTrajets()">Charger les trajets</button>
+        </div>
+        <div class="form-group">
+            <label>Date et heure de départ:</label>
+            <input type="datetime-local" id="dateHeureDepart">
+        </div>
+        <div class="form-group">
+            <label>Prix Standard:</label>
+            <input type="number" id="prixStandard" value="5000">
+        </div>
+        <div class="form-group">
+            <label>Prix VIP:</label>
+            <input type="number" id="prixVIP" value="10000">
+        </div>
+        <button onclick="createVoyage()">2️⃣ Créer Voyage</button>
+    </div>
+
+    <div class="box">
+        <h2>Logs:</h2>
+        <div id="log">Prêt...</div>
+    </div>
+
+    <script>
+        function log(msg, type = 'info') {
+            const el = document.getElementById('log');
+            const timestamp = new Date().toLocaleTimeString();
+            const prefix = type === 'success' ? '✓' : type === 'error' ? '✗' : '•';
+            el.textContent += `\n[${timestamp}] ${prefix} ${msg}`;
+            el.scrollTop = el.scrollHeight;
+        }
+
+        async function getToken() {
+            const token = localStorage.getItem('auth_token') || sessionStorage.getItem('auth_token');
+            if (!token) {
+                log('❌ Pas de token - connectez-vous d\'abord', 'error');
+                return null;
+            }
+            return token;
+        }
+
+        async function loadBuses() {
+            log('Chargement des buses...');
+            const token = await getToken();
+            if (!token) return;
+
+            try {
+                const res = await fetch('/api/admin/bus', {
+                    headers: { 'Authorization': 'Bearer ' + token, 'Accept': 'application/json' }
+                });
+                const data = await res.json();
+                
+                if (data.success && data.data && data.data.length > 0) {
+                    const select = document.getElementById('idBus');
+                    select.innerHTML = '<option value="">-- Sélectionner un bus --</option>';
+                    data.data.forEach(bus => {
+                        select.innerHTML += `<option value="${bus.idBus}">${bus.immatriculation} (${bus.marque})</option>`;
+                    });
+                    log(`✓ ${data.data.length} buses chargées`, 'success');
+                } else {
+                    log('❌ Aucune bus trouvée', 'error');
+                }
+            } catch (e) {
+                log(`❌ Erreur: ${e.message}`, 'error');
+            }
+        }
+
+        async function loadTrajets() {
+            log('Chargement des trajets...');
+            const token = await getToken();
+            if (!token) return;
+
+            try {
+                const res = await fetch('/api/admin/trajets', {
+                    headers: { 'Authorization': 'Bearer ' + token, 'Accept': 'application/json' }
+                });
+                const data = await res.json();
+                
+                if (data.success && data.data && data.data.data && data.data.data.length > 0) {
+                    const select = document.getElementById('idTrajet');
+                    select.innerHTML = '<option value="">-- Sélectionner un trajet --</option>';
+                    data.data.data.forEach(trajet => {
+                        select.innerHTML += `<option value="${trajet.idTrajet}">${trajet.villeDepart} → ${trajet.villeArrivee}</option>`;
+                    });
+                    log(`✓ ${data.data.data.length} trajets chargés`, 'success');
+                } else {
+                    log('❌ Aucun trajet trouvé', 'error');
+                }
+            } catch (e) {
+                log(`❌ Erreur: ${e.message}`, 'error');
+            }
+        }
+
+        async function testVoyagesList() {
+            log('\n📡 GET /api/admin/voyages');
+            const token = await getToken();
+            if (!token) return;
+
+            try {
+                const res = await fetch('/api/admin/voyages', {
+                    headers: {
+                        'Authorization': 'Bearer ' + token,
+                        'Accept': 'application/json'
+                    }
+                });
+
+                log(`Status: ${res.status}`, res.ok ? 'info' : 'error');
+
+                const data = await res.json();
+                console.log('Response data:', data);
+                
+                if (data.success && data.data) {
+                    const voyages = data.data.data || [];
+                    log(`✓ ${voyages.length} voyages trouvés`, 'success');
+                    if (voyages.length === 0) {
+                        log('Aucun voyage n\'existe encore', 'info');
+                    } else {
+                        voyages.forEach(v => {
+                            log(`  - Voyage ID ${v.idVoyage} (Bus: ${v.idBus}, Trajet: ${v.idTrajet}, Date: ${v.dateHeureDepart})`, 'success');
+                        });
+                    }
+                } else {
+                    log(`❌ Erreur: ${data.message || 'Réponse invalide'}`, 'error');
+                }
+            } catch (e) {
+                log(`❌ Exception: ${e.message}`, 'error');
+            }
+        }
+
+        async function createVoyage() {
+            log('\n📡 POST /api/admin/voyages');
+            const token = await getToken();
+            if (!token) return;
+
+            const idBus = document.getElementById('idBus').value;
+            const idTrajet = document.getElementById('idTrajet').value;
+            const dateHeureDepart = document.getElementById('dateHeureDepart').value;
+            const prixStandard = parseFloat(document.getElementById('prixStandard').value);
+            const prixVIP = parseFloat(document.getElementById('prixVIP').value);
+
+            if (!idBus || !idTrajet || !dateHeureDepart) {
+                log('❌ Tous les champs sont obligatoires', 'error');
+                return;
+            }
+
+            const payload = {
+                idBus: parseInt(idBus),
+                idTrajet: parseInt(idTrajet),
+                dateHeureDepart: new Date(dateHeureDepart).toISOString(),
+                prixStandard,
+                prixVIP
+            };
+
+            log(`Voyage: Bus ${idBus}, Trajet ${idTrajet}, ${dateHeureDepart}`);
+            log(`Payload: ${JSON.stringify(payload)}`);
+
+            try {
+                const res = await fetch('/api/admin/voyages', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': 'Bearer ' + token,
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify(payload)
+                });
+
+                log(`Status: ${res.status}`, res.ok ? 'info' : 'error');
+                const text = await res.text();
+
+                try {
+                    const data = JSON.parse(text);
+                    if (data.success) {
+                        log(`✓ Voyage créé! (ID: ${data.data.id || data.data.idVoyage})`, 'success');
+                    } else {
+                        log(`✗ Erreur: ${data.message}`, 'error');
+                        if (data.errors) log(`Erreurs: ${JSON.stringify(data.errors)}`, 'error');
+                    }
+                } catch (e) {
+                    log(`✗ Erreur parsing: ${text.substring(0, 200)}`, 'error');
+                }
+            } catch (e) {
+                log(`❌ Exception: ${e.message}`, 'error');
+            }
+        }
+
+        window.onload = () => {
+            log('Page chargée.');
+            loadBuses();
+            loadTrajets();
+        };
+    </script>
+</body>
+</html>
