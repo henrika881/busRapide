@@ -187,17 +187,19 @@
     </div>
 
     <!-- Modal Traitement -->
-<div id="processing-modal" class="fixed inset-0 z-50 hidden flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
-    <div class="bg-white rounded-2xl w-full max-w-md p-8 text-center animate-fade-in-up">
-        <div class="w-20 h-20 bg-blue-50 text-brand-600 rounded-full flex items-center justify-center text-4xl mx-auto mb-6">
-             <i class="fa-solid fa-spinner fa-spin"></i>
+    <div id="processing-modal"
+        class="fixed inset-0 z-50 hidden flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+        <div class="bg-white rounded-2xl w-full max-w-md p-8 text-center animate-fade-in-up">
+            <div
+                class="w-20 h-20 bg-blue-50 text-brand-600 rounded-full flex items-center justify-center text-4xl mx-auto mb-6">
+                <i class="fa-solid fa-spinner fa-spin"></i>
+            </div>
+            <h3 class="text-2xl font-bold text-slate-900 mb-2">Traitement en cours...</h3>
+            <p class="text-slate-600 mb-6">Veuillez patienter pendant que nous communiquons avec le service de paiement.</p>
         </div>
-        <h3 class="text-2xl font-bold text-slate-900 mb-2">Traitement en cours...</h3>
-        <p class="text-slate-600 mb-6">Veuillez patienter pendant que nous communiquons avec le service de paiement.</p>
     </div>
-</div>
 
-<!-- Modal Succès -->
+    <!-- Modal Succès -->
     <div id="success-modal"
         class="fixed inset-0 z-50 hidden flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
         <div class="bg-white rounded-2xl w-full max-w-md p-8 text-center animate-fade-in-up">
@@ -267,85 +269,44 @@
                 // Seul le passager principal (i === 1) a le champ CNI/Passeport
                 if (i === 1) {
                     passengerCard.innerHTML = `
-                    <div class="flex items-center justify-between mb-6">
-                        <div class="flex items-center gap-4">
-                            <div class="w-10 h-10 rounded-lg bg-brand-100 text-brand-600 flex items-center justify-center font-bold">
-                                ${i}
+                        <div class="flex items-center justify-between mb-6">
+                            <div class="flex items-center gap-4">
+                                <div class="w-10 h-10 rounded-lg bg-brand-100 text-brand-600 flex items-center justify-center font-bold">
+                                    ${i}
+                                </div>
+                                <h2 class="text-lg font-bold text-slate-800">Passager Principal</h2>
                             </div>
-                            <h2 class="text-lg font-bold text-slate-800">Passager Principal</h2>
-                        </div>
-                        <label class="flex items-center gap-2 cursor-pointer text-sm text-slate-600 hover:text-brand-600 transition">
-                            <input type="checkbox" id="is-main-passenger" onchange="fillMainPassengerData()" 
-                                   class="w-4 h-4 text-brand-600 rounded border-slate-300 focus:ring-brand-500">
-                            <span class="font-medium">Utiliser mes informations</span>
-                        </label>
-                    </div>
-
-                    <div class="grid md:grid-cols-2 gap-4">
-                        <div>
-                            <label class="block text-sm font-bold text-slate-700 mb-2">
-                                <i class="fa-solid fa-user mr-1 text-brand-600"></i>Nom complet *
+                            <label class="flex items-center gap-2 cursor-pointer text-sm text-slate-600 hover:text-brand-600 transition">
+                                <input type="checkbox" id="is-main-passenger" onchange="fillMainPassengerData()" 
+                                       class="w-4 h-4 text-brand-600 rounded border-slate-300 focus:ring-brand-500">
+                                <span class="font-medium">Utiliser mes informations</span>
                             </label>
-                            <input type="text" 
-                                   name="passenger[${i}][nom_complet]" 
-                                   required 
-                                   class="w-full px-4 py-3 rounded-lg border border-slate-200 focus:ring-2 focus:ring-brand-500 focus:border-brand-500 transition outline-none" 
-                                   placeholder="Ex: Jean Dupont">
                         </div>
-                        <div>
-                            <label class="block text-sm font-bold text-slate-700 mb-2">
-                                <i class="fa-solid fa-id-card mr-1 text-brand-600"></i>CNI / Passeport / Carte Scolaire *
-                            </label>
-                            <input type="text" 
-                                   name="passenger[${i}][cni]" 
-                                   required 
-                                   class="w-full px-4 py-3 rounded-lg border border-slate-200 focus:ring-2 focus:ring-brand-500 focus:border-brand-500 transition outline-none" 
-                                   placeholder="Ex: 123456789">
-                        </div>
-                    </div>
 
-                    <div class="mt-4">
-                        <label class="block text-sm font-bold text-slate-700 mb-2">
-                            <i class="fa-solid fa-venus-mars mr-1 text-brand-600"></i>Genre *
-                        </label>
-                        <select name="passenger[${i}][genre]" 
-                                required 
-                                class="w-full px-4 py-3 rounded-lg border border-slate-200 focus:ring-2 focus:ring-brand-500 focus:border-brand-500 transition outline-none">
-                            <option value="">Sélectionnez le genre</option>
-                            <option value="homme">Homme</option>
-                            <option value="femme">Femme</option>
-                        </select>
-                    </div>
-
-                    <div class="mt-4 bg-blue-50 border border-blue-200 rounded-lg p-3">
-                        <p class="text-xs text-blue-800">
-                            <i class="fa-solid fa-info-circle mr-1"></i>
-                            <strong>Passager principal :</strong> Vous devrez présenter votre pièce d'identité lors de l'embarquement.
-                        </p>
-                    </div>
-                `;
-                } else {
-                    // Les autres passagers n'ont pas besoin de CNI
-                    passengerCard.innerHTML = `
-                    <div class="flex items-center gap-4 mb-6">
-                        <div class="w-10 h-10 rounded-lg bg-slate-100 text-slate-600 flex items-center justify-center font-bold">
-                            ${i}
+                        <div class="grid md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-bold text-slate-700 mb-2">
+                                    <i class="fa-solid fa-user mr-1 text-brand-600"></i>Nom complet *
+                                </label>
+                                <input type="text" 
+                                       name="passenger[${i}][nom_complet]" 
+                                       required 
+                                       class="w-full px-4 py-3 rounded-lg border border-slate-200 focus:ring-2 focus:ring-brand-500 focus:border-brand-500 transition outline-none" 
+                                       placeholder="Ex: Jean Dupont">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-bold text-slate-700 mb-2">
+                                    <i class="fa-solid fa-id-card mr-1 text-brand-600"></i>CNI / Passeport / Carte Scolaire *
+                                </label>
+                                <input type="text" 
+                                       name="passenger[${i}][cni]" 
+                                       required 
+                                       class="w-full px-4 py-3 rounded-lg border border-slate-200 focus:ring-2 focus:ring-brand-500 focus:border-brand-500 transition outline-none" 
+                                       placeholder="Ex: 123456789">
+                            </div>
                         </div>
-                        <h2 class="text-lg font-bold text-slate-800">Passager ${i}</h2>
-                    </div>
 
-                    <div class="grid md:grid-cols-2 gap-4">
-                        <div>
-                            <label class="block text-sm font-bold text-slate-700 mb-2">
-                                <i class="fa-solid fa-user mr-1 text-brand-600"></i>Nom complet *
-                            </label>
-                            <input type="text" 
-                                   name="passenger[${i}][nom_complet]" 
-                                   required 
-                                   class="w-full px-4 py-3 rounded-lg border border-slate-200 focus:ring-2 focus:ring-brand-500 focus:border-brand-500 transition outline-none" 
-                                   placeholder="Ex: Marie Martin">
-                        </div>
-                        <div>
+                        <div class="mt-4">
                             <label class="block text-sm font-bold text-slate-700 mb-2">
                                 <i class="fa-solid fa-venus-mars mr-1 text-brand-600"></i>Genre *
                             </label>
@@ -357,8 +318,49 @@
                                 <option value="femme">Femme</option>
                             </select>
                         </div>
-                    </div>
-                `;
+
+                        <div class="mt-4 bg-blue-50 border border-blue-200 rounded-lg p-3">
+                            <p class="text-xs text-blue-800">
+                                <i class="fa-solid fa-info-circle mr-1"></i>
+                                <strong>Passager principal :</strong> Vous devrez présenter votre pièce d'identité lors de l'embarquement.
+                            </p>
+                        </div>
+                    `;
+                } else {
+                    // Les autres passagers n'ont pas besoin de CNI
+                    passengerCard.innerHTML = `
+                        <div class="flex items-center gap-4 mb-6">
+                            <div class="w-10 h-10 rounded-lg bg-slate-100 text-slate-600 flex items-center justify-center font-bold">
+                                ${i}
+                            </div>
+                            <h2 class="text-lg font-bold text-slate-800">Passager ${i}</h2>
+                        </div>
+
+                        <div class="grid md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-bold text-slate-700 mb-2">
+                                    <i class="fa-solid fa-user mr-1 text-brand-600"></i>Nom complet *
+                                </label>
+                                <input type="text" 
+                                       name="passenger[${i}][nom_complet]" 
+                                       required 
+                                       class="w-full px-4 py-3 rounded-lg border border-slate-200 focus:ring-2 focus:ring-brand-500 focus:border-brand-500 transition outline-none" 
+                                       placeholder="Ex: Marie Martin">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-bold text-slate-700 mb-2">
+                                    <i class="fa-solid fa-venus-mars mr-1 text-brand-600"></i>Genre *
+                                </label>
+                                <select name="passenger[${i}][genre]" 
+                                        required 
+                                        class="w-full px-4 py-3 rounded-lg border border-slate-200 focus:ring-2 focus:ring-brand-500 focus:border-brand-500 transition outline-none">
+                                    <option value="">Sélectionnez le genre</option>
+                                    <option value="homme">Homme</option>
+                                    <option value="femme">Femme</option>
+                                </select>
+                            </div>
+                        </div>
+                    `;
                 }
 
                 container.appendChild(passengerCard);
@@ -490,8 +492,8 @@
             // Sièges
             const siegesList = document.getElementById('sieges-list');
             siegesList.innerHTML = siegeIds.map(id => `
-            <span class="px-2 py-1 bg-brand-100 text-brand-700 rounded font-bold text-xs">${id}</span>
-        `).join('');
+                <span class="px-2 py-1 bg-brand-100 text-brand-700 rounded font-bold text-xs">${id}</span>
+            `).join('');
 
             // Nombre de passagers
             document.getElementById('passagers-count').textContent = `${passagersCount} passager${passagersCount > 1 ? 's' : ''}`;
@@ -556,11 +558,11 @@
                 const nom = nameParts[0];
                 const prenom = nameParts.slice(1).join(' ') || '.';
 
-                passengersData.push({ 
-                    nom: nom, 
-                    prenom: prenom, 
-                    cni: cni || 'N/A', 
-                    genre: genre 
+                passengersData.push({
+                    nom: nom,
+                    prenom: prenom,
+                    cni: cni || 'N/A',
+                    genre: genre
                 });
             }
 
@@ -612,7 +614,7 @@
                     setTimeout(() => processingDesc.classList.remove('animate-pulse'), 500);
                 }
 
-                if (data.status === 'completed' || (data.success === true && data.status !== 'pending' && data.status !== 'failed' && data.status !== 'retry')) {
+                if (data.status === 'completed') {
                     // Succès
                     document.getElementById('processing-modal').style.display = 'none';
                     document.getElementById('success-modal').classList.remove('hidden');
@@ -628,9 +630,9 @@
                     paymentInProgress = false;
                 } else {
                     // Toujours en attente (pending, retry, error transformé en pending, etc.)
-                   // On re-vérifie dans 3 secondes
-                   console.log('Polling... Status:', data.status);
-                   setTimeout(() => checkPaymentStatus(reference), 3000);
+                    // On re-vérifie dans 3 secondes
+                    console.log('Polling... Status:', data.status);
+                    setTimeout(() => checkPaymentStatus(reference), 3000);
                 }
             } catch (error) {
                 console.error("Erreur polling:", error);
@@ -709,13 +711,13 @@
                 } else {
                     console.warn('Erreur API Tickets:', data);
                     document.getElementById('processing-modal').style.display = 'none';
-                    
+
                     let message = data.message || 'Erreur lors de la création du billet';
                     if (data.errors) {
                         const details = Object.values(data.errors).flat().join('\n');
                         message += '\n' + details;
                     }
-                    
+
                     showToast(message, 'error');
                     button.disabled = false;
                     document.getElementById('pay-button-text').classList.remove('hidden');

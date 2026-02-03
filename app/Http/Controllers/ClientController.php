@@ -94,15 +94,22 @@ class ClientController extends Controller
      */
     public function profile(Request $request)
     {
-        $client = $request->user()->load(['vip']);
+        $client = $request->user();
+
+        // Sécuriser le chargement de VIP car la table peut manquer
+        try {
+            $client->load(['vip']);
+        } catch (\Exception $e) {
+            \Log::warning("VIP relationship failed: " . $e->getMessage());
+        }
 
         // Calcul des stats directement pour éviter des erreurs de méthodes manquantes
         $statistiques = [
             'total_tickets' => $client->tickets()->count(),
-            'montant_total' => $client->tickets()->sum('prixBillet'),
+            'montant_total' => $client->tickets()->sum('prixPaye'),
             'prochain_voyage' => $client->tickets()
-                ->whereHas('voyage', fn($q) => $q->where('dateHeureDepart', '>', now()))
-                ->with('voyage')
+                ->whereHas('voyage', fn($q) => $q->where('dateHeureDepart', '>=', now()->format('Y-m-d H:i:s')))
+                ->with('voyage.trajet')
                 ->first()
         ];
 

@@ -129,13 +129,13 @@
         }
 
         /* Mobile menu */
-        .mobile-menu {
-            transform: translateX(100%);
-            transition: transform 0.3s ease-in-out;
+        .mobile-menu.open {
+            opacity: 1 !important;
+            pointer-events: auto !important;
         }
 
-        .mobile-menu.open {
-            transform: translateX(0);
+        .mobile-menu.open #mobile-menu-content {
+            transform: translateX(0) !important;
         }
     </style>
     @stack('styles')

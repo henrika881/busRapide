@@ -112,7 +112,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::post('/tickets/{id}/confirmer', [TicketController::class, 'confirmer']);
     Route::post('/tickets/{id}/annuler', [TicketController::class, 'annuler']);
     Route::get('/tickets/{id}/qrcode', [TicketController::class, 'getQRCode']);
-    Route::get('/tickets/{id}/download', [TicketController::class, 'download']);
+    // Route::get('/tickets/{id}/download', [TicketController::class, 'download']); // Déplacé hors du middleware
 
     // Routes VOYAGES CLIENTS
     Route::get('/voyages', [VoyageController::class, 'index']);
@@ -127,6 +127,8 @@ Route::middleware(['auth:sanctum', 'ability:super_admin'])->group(function () {
     // Gestion clients CRUD
     Route::apiResource('admin/clients', ClientController::class)->only(['index', 'show', 'store', 'update', 'destroy']);
 });
+
+Route::get('/tickets/{id}/download', [TicketController::class, 'download']);
 
 Route::get('/health', function () {
     return response()->json(['status' => 'OK', 'timestamp' => now()]);

@@ -11,6 +11,7 @@ use App\Models\Client;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use App\Mail\TicketConfirmation;
 use Carbon\Carbon;
@@ -19,7 +20,7 @@ use Illuminate\Support\Str;
 use App\Models\Passager;
 
 use App\Services\NelsiusPayService;
-// use App\Mail\TicketConfirmation; already imported above
+use Laravel\Sanctum\PersonalAccessToken;
 
 class TicketController extends Controller
 {
@@ -35,9 +36,10 @@ class TicketController extends Controller
     public function index(Request $request)
     {
         try {
+            $user = auth()->user();
             \Log::info('API Tickets appelée', [
                 'user_id' => auth()->id(),
-                'user_role' => auth()->user()->role ?? 'none',
+                'user_role' => $user ? ($user instanceof \App\Models\Client ? 'client' : ($user->role ?? 'none')) : 'guest',
                 'query_params' => $request->all()
             ]);
 
@@ -369,6 +371,14 @@ class TicketController extends Controller
 
                 $nelsiusRef = $paymentResponse['reference'];
 
+                if (!$nelsiusRef) {
+                    Log::error("Nelsius Pay Error: No reference returned", ['response' => $paymentResponse]);
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Erreur lors de l\'initiation du paiement : Référence manquante'
+                    ], 500);
+                }
+
                 // 3. Créer les tickets en statut "en_attente"
                 foreach ($idSieges as $index => $idSiege) {
                     $siege = Siege::findOrFail($idSiege);
@@ -449,7 +459,14 @@ class TicketController extends Controller
         $statusData = $this->nelsiusPay->checkTransactionStatus($reference);
 
         if (!$statusData['success']) {
-            return response()->json($statusData, 400);
+            // Log the error but don't break the polling with a 400
+            Log::error('Check payment status API error', ['reference' => $reference, 'details' => $statusData]);
+
+            return response()->json([
+                'success' => true, // Return true so frontend continues polling
+                'status' => 'unknown',
+                'message' => 'Vérification en cours... (passerelle temporairement indisponible)'
+            ]);
         }
 
         $remoteStatus = $statusData['status']; // 'completed', 'pending', 'failed'
@@ -1152,11 +1169,24 @@ class TicketController extends Controller
     }
 
     /**
-     * Télécharger un ticket individuel en PDF
+     * Télécharger un ticket individuel en PDF (Supporte auth par token dans l'URL)
      */
-    public function download($id)
+    public function download(Request $request, $id)
     {
         try {
+            // Tentative d'authentification manuelle via le token dans l'URL si non connecté
+            if (!auth()->check() && $request->has('token')) {
+                $token = PersonalAccessToken::findToken($request->token);
+                if ($token && $token->tokenable) {
+                    auth()->setUser($token->tokenable);
+                }
+            }
+
+            $user = auth()->user();
+            if (!$user) {
+                return response()->json(['success' => false, 'message' => 'Non authentifié'], 401);
+            }
+
             $ticket = Ticket::with([
                 'client',
                 'voyage.trajet',
@@ -1164,7 +1194,6 @@ class TicketController extends Controller
             ])->findOrFail($id);
 
             // Vérification de propriété (seul le propriétaire ou un admin peut télécharger)
-            $user = auth()->user();
             if ($user instanceof \App\Models\Client) {
                 if ($ticket->id_client !== $user->id_client) {
                     return response()->json(['success' => false, 'message' => 'Accès refusé à ce billet'], 403);

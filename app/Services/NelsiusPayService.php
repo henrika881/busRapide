@@ -7,13 +7,16 @@ use Illuminate\Support\Facades\Log;
 
 class NelsiusPayService
 {
+
     protected $baseUrl;
     protected $apiKey;
+    protected $secretkey;
 
     public function __construct()
     {
         $this->baseUrl = 'https://api.nelsius.com/api/v1';
         $this->apiKey = env('NELSIUS_API_KEY');
+        $this->secretkey = env('NELSIUS_API_SECRET');
     }
 
     /**
@@ -32,6 +35,7 @@ class NelsiusPayService
 
             $response = Http::withoutVerifying()->withHeaders([
                 'X-API-KEY' => $this->apiKey,
+                'X-API-SECRET' => $this->secretkey,
                 'Content-Type' => 'application/json',
                 'Accept' => 'application/json',
             ])->post($url, [
@@ -46,15 +50,24 @@ class NelsiusPayService
 
             if ($response->successful()) {
                 $data = $response->json();
-                // Support both structures (direct or nested in transaction)
-                $reference = $data['data']['transaction']['reference'] ?? $data['data']['reference'] ?? null;
-                $status = $data['data']['transaction']['status'] ?? $data['data']['status'] ?? 'pending';
+
+                // Log complete data structure to confirm nesting
+                Log::debug("Nelsius Pay JSON Decoded", ['data' => $data]);
+
+                //Extraction de la référence propre (UUID d'id de référence)
+                $reference = $data['data']['transaction']['reference_id'] ??
+                    $data['data']['gateway_reference'] ??
+                    $data['data']['reference'] ??
+                    null;
+
+                // Extraction du statut initial
+                $status = $data['data']['status'] ?? 'pending';
 
                 return [
                     'success' => true,
                     'reference' => $reference,
-                    'status' => $status,
-                    'message' => $data['message'] ?? 'Paiement initié'
+                    'status' => strtolower($status),
+                    'message' => $data['message'] ?? $data['data']['message'] ?? 'Paiement initié'
                 ];
             }
 
@@ -83,22 +96,37 @@ class NelsiusPayService
         try {
             $response = Http::withoutVerifying()->withHeaders([
                 'X-API-KEY' => $this->apiKey,
+                'X-API-SECRET' => $this->secretkey,
                 'Accept' => 'application/json',
             ])->get($url);
 
             if ($response->successful()) {
                 $data = $response->json();
+                $payload = $data['data'] ?? [];
+
+                // On détermine le statut normalisé
+                $status = 'pending';
+                if (($payload['is_completed'] ?? false) || ($payload['status'] ?? '') === 'SUCCESSFUL' || ($payload['status'] ?? '') === 'COMPLETED') {
+                    $status = 'completed';
+                } elseif (($payload['is_failed'] ?? false) || ($payload['status'] ?? '') === 'FAILED') {
+                    $status = 'failed';
+                }
+
                 return [
                     'success' => true,
-                    'status' => $data['data']['status'] ?? 'pending', // 'completed', 'failed', 'pending'
-                    'data' => $data['data']
+                    'status' => $status,
+                    'data' => $payload
                 ];
             }
 
+            $errorMsg = $response->json()['message'] ?? 'Impossible de vérifier le statut sur la passerelle';
+            Log::warning("Nelsius Pay Status Check Failed: " . $response->body());
+
             return [
                 'success' => false,
-                'message' => 'Impossible de vérifier le statut',
-                'status' => 'unknown'
+                'message' => $errorMsg,
+                'status' => 'unknown',
+                'details' => $response->json()
             ];
 
         } catch (\Exception $e) {
